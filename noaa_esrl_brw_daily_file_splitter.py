@@ -128,7 +128,12 @@ if __name__ == "__main__":
         
         ax1.plot(t, data[date_key]["pressure"])
         ax2.plot(t, data[date_key]["wind_speed"])
-        ax3.plot(t, data[date_key]["wind_direction"])
+        
+        Z    = np.radians(data[date_key]["wind_direction"] - 90)
+        X, Y = t, np.zeros(t.size)
+        U, V = -np.cos(Z), np.sin(Z)
+        
+        ax3.quiver(X, Y, U, V, width = 0.005)
         
         ax4.plot(t, data[date_key]["temperature_at_2m"],
                  c = "b", ls = "-", zorder = 0, label = "2m")
@@ -148,6 +153,8 @@ if __name__ == "__main__":
         ax2.set_xlim(t.min(), t.max())
         ax3.set_xlim(t.min(), t.max())
         ax4.set_xlim(t.min(), t.max())
+        
+        ax3.set_ylim(-1, 1)
         
         ax1.set_xticks(t)
         ax2.set_xticks(t)
