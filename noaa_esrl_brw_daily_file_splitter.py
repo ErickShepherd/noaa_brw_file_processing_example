@@ -46,8 +46,10 @@ License:
 import os
 
 # Third party imports.
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tqdm
 
 # Dunder definitions.
 __author__  = "Erick Edward Shepherd"
@@ -76,11 +78,17 @@ if __name__ == "__main__":
     # The path to the ASCII data file.
     filename         = "met_brw_insitu_1_obop_hour_2016.txt"
     output_directory = os.path.join(os.getcwd(), "met_brw_insitu_daily")
+    figure_directory = os.path.join(os.getcwd(), "figures")
     
     # Creates the output directory if it does not already exist.
     if not os.path.exists(output_directory):
         
         os.mkdir(output_directory)
+        
+    # Creates the output directory if it does not already exist.
+    if not os.path.exists(figure_directory):
+        
+        os.mkdir(figure_directory)
     
     # Reads in the ASCII file as a pandas.DataFrame.
     df = pd.read_csv(filename, names = COLUMN_NAMES, delim_whitespace = True)
@@ -101,11 +109,53 @@ if __name__ == "__main__":
     # saves each pandas.DataFrame to a new CSV.
     data = {}
     
-    for date, indices in gb.groups.items():
+    for date, indices in tqdm.tqdm(gb.groups.items(), total = len(gb)):
         
         date_key        = date.strftime("%Y-%m-%d")
         output_filename = "{}_met_brw_insitu_daily.csv".format(date_key)
         output_filepath = os.path.join(output_directory, output_filename)
+        figure_filename = "{}.png".format(date_key)
+        figure_filepath = os.path.join(figure_directory, figure_filename)
         
         data[date_key] = df.iloc[indices].reset_index(drop = True)
         data[date_key].to_csv(output_filepath, index = False)
+        
+        t = np.arange(1, 25)
+        
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize = (12, 8))
+        
+        fig.suptitle("{} NOAA ESRL BRW Data".format(date_key), weight = "bold")
+        
+        ax1.plot(t, data[date_key]["pressure"])
+        ax2.plot(t, data[date_key]["wind_speed"])
+        ax3.plot(t, data[date_key]["wind_direction"])
+        
+        ax4.plot(t, data[date_key]["temperature_at_2m"],
+                 c = "b", ls = "-", zorder = 0, label = "2m")
+        
+        ax4.plot(t, data[date_key]["temperature_at_10m"],
+                 c = "r", ls = "--", zorder = 1, label = "10m")
+        
+        ax4.plot(t, data[date_key]["temperature_at_top"],
+                 c = "k", ls = ":", zorder = 2, label = "top")
+        
+        ax1.set_title("Pressure")
+        ax2.set_title("Wind Speed")
+        ax3.set_title("Wind Direction")
+        ax4.set_title("Temperature")
+        
+        ax1.set_xlim(t.min(), t.max())
+        ax2.set_xlim(t.min(), t.max())
+        ax3.set_xlim(t.min(), t.max())
+        ax4.set_xlim(t.min(), t.max())
+        
+        ax1.set_xticks(t)
+        ax2.set_xticks(t)
+        ax3.set_xticks(t)
+        ax4.set_xticks(t)
+        
+        ax4.legend()
+        
+        plt.tight_layout(rect = [0, 0.03, 1, 0.95])
+        plt.savefig(figure_filepath)
+        plt.close()
